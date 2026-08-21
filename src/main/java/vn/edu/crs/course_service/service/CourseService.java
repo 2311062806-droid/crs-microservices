@@ -1,57 +1,99 @@
 package vn.edu.crs.course_service.service;
 
+import vn.edu.crs.course_service.dto.CourseDTO;
 import vn.edu.crs.course_service.entity.Course;
 import vn.edu.crs.course_service.repository.CourseRepository;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CourseService {
 
     private final CourseRepository courseRepository;
 
-    public CourseService(CourseRepository courseRepository) {
-        this.courseRepository = courseRepository;
+    public List<CourseDTO> getAll() {
+        return courseRepository.findAll()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public List<Course> getAllCourses() {
-        return courseRepository.findAll();
+    public CourseDTO getById(Long id) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() ->
+                        new NoSuchElementException(
+                                "Khong tim thay mon hoc id = " + id
+                        )
+                );
+
+        return toDTO(course);
     }
 
-    public Course getCourseById(Long id) {
-        return courseRepository.findById(id).orElse(null);
-    }
+    public CourseDTO create(CourseDTO dto) {
 
-    public Course createCourse(Course course) {
-        if (course.getSoChoConLai() == null) {
-            course.setSoChoConLai(course.getSoChoToiDa());
+        if (courseRepository.existsByTenMonHocIgnoreCase(dto.getTenMonHoc())) {
+            throw new IllegalArgumentException(
+                    "Ten mon hoc da ton tai"
+            );
         }
 
-        return courseRepository.save(course);
+        Course course = new Course();
+
+        course.setTenMonHoc(dto.getTenMonHoc());
+        course.setSoTinChi(dto.getSoTinChi());
+        course.setSoChoToiDa(dto.getSoChoToiDa());
+
+        // Khi tao moi:
+        // so cho con lai = so cho toi da
+        course.setSoChoConLai(dto.getSoChoToiDa());
+
+        return toDTO(courseRepository.save(course));
     }
 
-    public Course updateCourse(Long id, Course course) {
-        Course existing = courseRepository.findById(id).orElse(null);
+    public CourseDTO update(Long id, CourseDTO dto) {
 
-        if (existing == null) {
-            return null;
-        }
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() ->
+                        new NoSuchElementException(
+                                "Khong tim thay mon hoc id = " + id
+                        )
+                );
 
-        existing.setTenMonHoc(course.getTenMonHoc());
-        existing.setSoTinChi(course.getSoTinChi());
-        existing.setSoChoToiDa(course.getSoChoToiDa());
-        existing.setSoChoConLai(course.getSoChoConLai());
+        course.setTenMonHoc(dto.getTenMonHoc());
+        course.setSoTinChi(dto.getSoTinChi());
+        course.setSoChoToiDa(dto.getSoChoToiDa());
 
-        return courseRepository.save(existing);
+        // Khong cho client sua truc tiep soChoConLai
+
+        return toDTO(courseRepository.save(course));
     }
 
-    public boolean deleteCourse(Long id) {
+    public void delete(Long id) {
+
         if (!courseRepository.existsById(id)) {
-            return false;
+            throw new NoSuchElementException(
+                    "Khong tim thay mon hoc id = " + id
+            );
         }
 
         courseRepository.deleteById(id);
-        return true;
+    }
+
+    private CourseDTO toDTO(Course course) {
+
+        return new CourseDTO(
+                course.getId(),
+                course.getTenMonHoc(),
+                course.getSoTinChi(),
+                course.getSoChoToiDa(),
+                course.getSoChoConLai()
+        );
     }
 }
