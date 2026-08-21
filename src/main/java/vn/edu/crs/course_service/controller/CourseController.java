@@ -7,10 +7,10 @@ import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/courses")
@@ -19,16 +19,28 @@ public class CourseController {
 
     private final CourseService courseService;
 
+    // =========================
+    // TIM KIEM + PHAN TRANG + SORT
+    // =========================
     @GetMapping
-    public List<CourseDTO> getAll() {
-        return courseService.getAll();
+    public Page<CourseDTO> search(
+            @RequestParam(required = false) String keyword,
+            Pageable pageable
+    ) {
+        return courseService.search(keyword, pageable);
     }
 
+    // =========================
+    // LAY MON HOC THEO ID
+    // =========================
     @GetMapping("/{id}")
     public CourseDTO getById(@PathVariable Long id) {
         return courseService.getById(id);
     }
 
+    // =========================
+    // THEM MON HOC
+    // =========================
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CourseDTO create(
@@ -37,6 +49,9 @@ public class CourseController {
         return courseService.create(dto);
     }
 
+    // =========================
+    // CAP NHAT MON HOC
+    // =========================
     @PutMapping("/{id}")
     public CourseDTO update(
             @PathVariable Long id,
@@ -45,6 +60,9 @@ public class CourseController {
         return courseService.update(id, dto);
     }
 
+    // =========================
+    // XOA MON HOC
+    // =========================
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
